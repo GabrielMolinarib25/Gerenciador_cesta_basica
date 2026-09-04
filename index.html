@@ -1,0 +1,331 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Café com Aroma de Malware</title>
+    <link rel="stylesheet" href="style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+
+<body>
+
+    <!-- TELA DE LOGIN -->
+    <section id="view-login" class="view view-flex active">
+        <div class="login-card">
+            <div class="login-header">
+                <div class="logo-circle-large">
+                    <span>ib</span>
+                </div>
+                <span class="login-subtitle">Gerenciamento de Cestas Básicas</span>
+                <h2 class="login-title">Igreja Batista Betel</h2>
+            </div>
+            <form id="form-login">
+                <div class="form-group">
+                    <label>E-mail</label>
+                    <input type="email" id="login-email" placeholder="maria.souza@igrejaesperanca.org" required>
+                </div>
+                <div class="form-group">
+                    <label>Senha</label>
+                    <input type="password" id="login-senha" placeholder="password123" required>
+                </div>
+                <button type="submit" class="btn btn-primary full-width">Entrar no Sistema</button>
+                <a href="#" class="forgot-password">Esqueci minha senha</a>
+            </form>
+        </div>
+    </section>
+
+    <!-- ÁREA AUTENTICADA DO SISTEMA -->
+    <div id="app-layout" class="hidden">
+
+        <!-- OVERLAY DO MENU LATERAL -->
+        <div id="sidebar-overlay" class="sidebar-overlay hidden" onclick="toggleSidebar()"></div>
+
+        <!-- MENU LATERAL (SIDEBAR) -->
+        <aside id="sidebar" class="sidebar hidden">
+            <div class="sidebar-header">
+                <div class="logo-circle-small">ib</div>
+                <h2>Menu</h2>
+                <i class="fa-solid fa-xmark close-icon" onclick="toggleSidebar()"></i>
+            </div>
+            <nav class="sidebar-nav">
+                <a href="#" onclick="navigate('view-inicio')"><i class="fa-solid fa-house"></i> Início</a>
+                <a href="#" onclick="navigate('view-pessoas')"><i class="fa-solid fa-user-group"></i> Pessoas
+                    Atendidas</a>
+                <a href="#" onclick="navigate('view-cestas')"><i class="fa-solid fa-box"></i> Gestão de Cestas</a>
+                <a href="#" onclick="navigate('view-montagem')"><i class="fa-solid fa-list-check"></i> Montagem da
+                    Cesta</a>
+                <a href="#" onclick="navigate('view-controle-recebimentos')"><i class="fa-solid fa-calendar-check"></i>
+                    Controle de Recebimentos</a>
+            </nav>
+        </aside>
+
+        <!-- CABEÇALHO GLOBAL -->
+        <header id="main-header">
+            <div class="header-left">
+                <i class="fa-solid fa-bars menu-icon" onclick="toggleSidebar()"></i>
+                <div class="logo-container">
+                    <div class="logo-circle-small">ib</div>
+                    <div class="brand">
+                        <h1>Igreja Batista Betel</h1>
+                        <span>SOCIAL</span>
+                    </div>
+                </div>
+            </div>
+            <div class="header-right">
+                <a href="#" id="btn-voltar" class="voltar-link hidden" onclick="navigate('view-inicio')">
+                    <i class="fa-solid fa-arrow-left"></i> Voltar ao Início
+                </a>
+                <div class="user-info">
+                    <strong id="user-name-display">Carregando...</strong>
+                    <span id="user-role-display">Secretária</span>
+                </div>
+                <button id="btn-logout" class="btn-text">Sair <i
+                        class="fa-solid fa-arrow-right-from-bracket"></i></button>
+            </div>
+        </header>
+
+        <main id="main-content">
+
+            <!-- TELA: INÍCIO -->
+            <section id="view-inicio" class="view hidden">
+                <div class="page-header">
+                    <h2 id="welcome-message">Bem-vindo(a)!</h2>
+                    <p>Como podemos abençoar as famílias da nossa comunidade hoje? Escolha uma das tarefas abaixo.</p>
+                </div>
+                <div class="dashboard-cards">
+                    <div class="dash-card">
+                        <div class="card-icon"><i class="fa-solid fa-box"></i></div>
+                        <h3>Gerenciar Cestas</h3>
+                        <p>Cadastre a montagem de novas cestas e controle quais famílias já receberam seus mantimentos.
+                        </p>
+                        <button class="btn btn-primary" onclick="navigate('view-cestas')">Acessar Painel &rarr;</button>
+                    </div>
+                    <div class="dash-card">
+                        <div class="card-icon"><i class="fa-solid fa-user-group"></i></div>
+                        <h3>Pessoas Atendidas</h3>
+                        <p>Visualize os dados cadastrais das famílias assistidas e adicione novas pessoas necessitadas
+                            ao cadastro.</p>
+                        <button class="btn btn-primary" onclick="navigate('view-pessoas')">Ver Famílias &rarr;</button>
+                    </div>
+                    <div class="dash-card">
+                        <div class="card-icon"><i class="fa-solid fa-list-check"></i></div>
+                        <h3>Montagem da Cesta</h3>
+                        <p>Controle o estoque de alimentos, selecione os itens e monte as cestas para distribuição.</p>
+                        <button class="btn btn-primary" onclick="navigate('view-montagem')">Montar &rarr;</button>
+                    </div>
+                    <div class="dash-card">
+                        <div class="card-icon"><i class="fa-solid fa-calendar-check"></i></div>
+                        <h3>Controle de Recebimentos</h3>
+                        <p>Permita consultar e registrar quais famílias receberam suas cestas em cada mês do ano.</p>
+                        <button class="btn btn-primary" onclick="navigate('view-controle-recebimentos')">Acessar
+                            Controle &rarr;</button>
+                    </div>
+                </div>
+            </section>
+
+            <!-- TELA: PESSOAS ATENDIDAS -->
+            <section id="view-pessoas" class="view hidden">
+                <div class="page-title">
+                    <h2>Pessoas Atendidas</h2>
+                </div>
+                <div class="content-card">
+                    <h3>Cadastrar Nova Pessoa Beneficiária</h3>
+                    <form id="form-pessoa" class="form-row">
+                        <div class="form-group flex-2"><label>Nome completo</label><input type="text" id="pessoa-nome"
+                                placeholder="Ex: Maria das Graças" required></div>
+                        <div class="form-group flex-1"><label>Data de Nascimento</label><input type="text"
+                                id="pessoa-nascimento" placeholder="Ex: 22/08/1979" required></div>
+                        <div class="form-group flex-3"><label>Endereço Residencial</label><input type="text"
+                                id="pessoa-endereco" placeholder="Ex: Av. Presidente Vargas, 1024" required></div>
+                        <div class="form-actions-inline"><button type="submit" class="btn btn-primary">Cadastrar
+                                Pessoa</button></div>
+                    </form>
+                </div>
+                <div class="content-card">
+                    <h3>Pessoas Cadastradas no Social</h3>
+                    <div class="table-responsive">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Nome Completo</th>
+                                    <th>Nascimento</th>
+                                    <th>Endereço Residencial</th>
+                                    <th>Status da Cesta</th>
+                                    <th class="col-actions">Ações</th>
+                                </tr>
+                            </thead>
+                            <tbody id="tbody-pessoas"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
+
+            <!-- TELA: GERENCIAR CESTAS -->
+            <section id="view-cestas" class="view hidden">
+                <div class="page-title">
+                    <h2>Gestão de Cestas</h2>
+                </div>
+
+                <div class="estoque-disponivel-container content-card" style="padding: 20px;">
+                    <h3 style="margin-bottom: 12px; border:none; padding:0;">Cestas Disponíveis para Entrega</h3>
+                    <div class="estoque-disponivel-cards">
+                        <div class="badge-estoque"><i class="fa-solid fa-box"></i> Cesta Básica: <strong
+                                id="estoque-basica-qtd">0</strong></div>
+                        <div class="badge-estoque"><i class="fa-solid fa-box-open"></i> Cesta Pequena: <strong
+                                id="estoque-pequena-qtd">0</strong></div>
+                    </div>
+                    <p class="subtitle-text" style="margin-top: 10px; margin-bottom: 0;">O estoque acima é gerado pelas
+                        cestas produzidas na tela "Montagem da Cesta".</p>
+                </div>
+
+                <div class="content-card">
+                    <h3>Cadastrar Entrega de Cesta</h3>
+                    <form id="form-cesta">
+                        <div class="form-row">
+                            <div class="form-group flex-1"><label>Quantidade</label><input type="number" id="cesta-qtd"
+                                    placeholder="Ex: 1" min="1" required></div>
+                            <div class="form-group flex-3"><label>Cesta escolhida</label><select id="cesta-tipo"
+                                    required>
+                                    <option value="Cesta Básica">Cesta Básica</option>
+                                    <option value="Cesta Pequena">Cesta Pequena</option>
+                                </select></div>
+                            <div class="form-group flex-2"><label>Data de Validade</label><input type="text"
+                                    id="cesta-validade" placeholder="Ex: 24/11/2026" required></div>
+                        </div>
+                        <div class="form-row">
+                            <div class="form-group flex-2"><label>Pessoa que receberá</label><select id="cesta-pessoa"
+                                    required></select></div>
+                            <div class="form-group flex-3"><label>Endereço (Auto-preenchido)</label><input type="text"
+                                    id="cesta-endereco-auto" readonly></div>
+                        </div>
+                        <div class="form-actions right"><button type="submit" class="btn btn-primary">Registrar
+                                Cesta</button></div>
+                    </form>
+                </div>
+
+                <div class="content-card">
+                    <h3>Histórico de Cestas</h3>
+                    <div class="table-responsive">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Alimento / Cesta</th>
+                                    <th>Qtd.</th>
+                                    <th>Validade</th>
+                                    <th>Pessoa</th>
+                                    <th>Endereço</th>
+                                    <th>Status</th>
+                                    <th class="col-actions">Ações</th>
+                                </tr>
+                            </thead>
+                            <tbody id="tbody-cestas"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
+
+            <!-- TELA: MONTAGEM DA CESTA -->
+            <section id="view-montagem" class="view hidden">
+                <div class="page-title">
+                    <h2>Montagem da Cesta</h2>
+                </div>
+                <div class="content-card">
+                    <h3>Selecione os alimentos e controle o estoque</h3>
+                    <p class="subtitle-text">Ajuste o estoque disponível e a quantidade necessária por cesta. O sistema
+                        calculará o máximo permitido.</p>
+
+                    <div class="grid-alimentos" id="grid-alimentos-container">
+                        <!-- Preenchido via JavaScript -->
+                    </div>
+
+                    <div class="montagem-footer">
+                        <div class="tipo-cesta-radio">
+                            <strong>Tipo de Cesta</strong>
+                            <div class="radio-group">
+                                <label class="custom-radio"><input type="radio" name="tipo-cesta-montagem"
+                                        value="Cesta Básica" checked><span class="radio-mark"></span> Cesta
+                                    Básica</label>
+                                <label class="custom-radio"><input type="radio" name="tipo-cesta-montagem"
+                                        value="Cesta Pequena"><span class="radio-mark"></span> Cesta Pequena</label>
+                            </div>
+                        </div>
+
+                        <div class="montagem-acoes">
+                            <div class="capacidade-info" id="txt-capacidade-maxima">Máximo disponível: 0 cestas</div>
+                            <div class="grupo-montar">
+                                <label>Qtd. a montar:</label>
+                                <input type="number" id="qtd-montar-input" value="1" min="1" class="input-montar">
+                            </div>
+                            <button class="btn btn-primary" onclick="montarCestas()">Montar Cestas</button>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- TELA: CONTROLE DE RECEBIMENTOS -->
+            <section id="view-controle-recebimentos" class="view hidden">
+                <div class="page-title"
+                    style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 16px;">
+                    <h2>Controle de Recebimentos</h2>
+                    <button class="btn btn-primary" onclick="exportarExcel()"><i class="fa-solid fa-file-excel"
+                            style="margin-right: 8px;"></i> Exportar para Excel</button>
+                </div>
+
+                <div class="content-card">
+                    <div class="recebimentos-filters form-row">
+                        <div class="form-group flex-1">
+                            <label>Ano de Referência</label>
+                            <select id="recebimentos-ano" onchange="renderRecebimentos()">
+                                <option value="2026">2026</option>
+                                <option value="2025">2025</option>
+                            </select>
+                        </div>
+                        <div class="form-group flex-3">
+                            <label>Pesquisar beneficiário</label>
+                            <input type="text" id="recebimentos-busca" placeholder="Digite o nome da pessoa..."
+                                oninput="renderRecebimentos()">
+                        </div>
+                    </div>
+
+                    <div class="table-responsive">
+                        <p class="subtitle-text" style="margin-bottom: 15px;">
+                            <i class="fa-solid fa-circle-info text-blue"></i> Clique no mês correspondente para
+                            marcar/desmarcar o recebimento. Cada marcação consome <strong>1 Cesta</strong> do estoque
+                            disponível.
+                        </p>
+                        <table class="table-recebimentos">
+                            <thead>
+                                <tr>
+                                    <th style="min-width: 150px;">Beneficiário</th>
+                                    <th>Jan</th>
+                                    <th>Fev</th>
+                                    <th>Mar</th>
+                                    <th>Abr</th>
+                                    <th>Mai</th>
+                                    <th>Jun</th>
+                                    <th>Jul</th>
+                                    <th>Ago</th>
+                                    <th>Set</th>
+                                    <th>Out</th>
+                                    <th>Nov</th>
+                                    <th>Dez</th>
+                                </tr>
+                            </thead>
+                            <tbody id="tbody-recebimentos">
+                                <!-- Preenchido via JavaScript -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
+
+        </main>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+
+</html>
