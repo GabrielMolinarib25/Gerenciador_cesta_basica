@@ -6,24 +6,20 @@ const db = {
         id: 1, nome: "Priscila", cargo: "Secretária", email: "maria.souza@igrejaesperanca.org"
     },
     pessoas: [
-        { id: 1, nome: "Ana Silva", nascimento: "14/07/1982", endereco: "Rua das Flores, 123 - Centro", status: "Recebeu" },
-        { id: 2, nome: "João Santos", nascimento: "03/11/1975", endereco: "Av. Brasil, 456 - Jardim das Palmeiras", status: "Não recebeu" },
-        { id: 3, nome: "Clarice Lima", nascimento: "25/01/1990", endereco: "Rua Ceará, 90 - Bairro das Indústrias", status: "Recebeu" }
+        { id: 1, nome: "Ana Silva", nascimento: "14/07/1982", endereco: "Rua das Flores, 123 - Centro" },
+        { id: 2, nome: "João Santos", nascimento: "03/11/1975", endereco: "Av. Brasil, 456 - Jardim das Palmeiras" },
+        { id: 3, nome: "Clarice Lima", nascimento: "25/01/1990", endereco: "Rua Ceará, 90 - Bairro das Indústrias" }
     ],
     // Estoque de cestas prontas para entrega
     estoqueCestas: {
         "Cesta Básica": 0,
         "Cesta Pequena": 0
     },
-    // Histórico de cestas entregues (Gestão de Cestas)
+    // Histórico de Cestas (Fonte universal de dados e recebimentos)
     cestas: [
-        { id: 1, tipo: "Cesta Básica", qtd: 1, validade: "12/05/2026", pessoaId: 1, status: "Entregue" },
-        { id: 2, tipo: "Cesta Pequena", qtd: 1, validade: "18/06/2026", pessoaId: 2, status: "Entregue" }
-    ],
-    // Matriz de Controle de Recebimentos
-    recebimentos: [
-        { id: 101, pessoaId: 1, cestaId: 1, ano: 2026, mes: 1, recebido: true },
-        { id: 102, pessoaId: 2, cestaId: 2, ano: 2026, mes: 1, recebido: true }
+        { id: 1, tipo: "Cesta Básica", qtd: 1, validade: "30/12/2026", dataRecebimento: "15/01/2026", pessoaId: 1, status: "Entregue" },
+        { id: 2, tipo: "Cesta Pequena", qtd: 1, validade: "18/06/2026", dataRecebimento: "10/02/2026", pessoaId: 2, status: "Entregue" },
+        { id: 3, tipo: "Cesta Básica", qtd: 1, validade: "25/03/2026", dataRecebimento: "", pessoaId: 3, status: "Pendente" }
     ],
     // 18 Itens com Estoque e Qtd por Cesta
     itensMontagem: [
@@ -49,20 +45,24 @@ const db = {
 };
 
 // ==========================================
-// MENU E NAVEGAÇÃO
+// FUNÇÕES UTILITÁRIAS
 // ==========================================
-function toggleSidebar() {
-    const sidebar = document.getElementById('sidebar');
-    const overlay = document.getElementById('sidebar-overlay');
-    if (sidebar.classList.contains('open')) {
-        sidebar.classList.remove('open');
-        overlay.classList.add('hidden');
-    } else {
-        sidebar.classList.add('open');
-        overlay.classList.remove('hidden');
+
+// Parse seguro de data para identificar ano e mes do formato dd/mm/yyyy
+function parseDataRecebimento(dataStr) {
+    if (!dataStr || dataStr.trim() === '') return null;
+    const parts = dataStr.split('/');
+    if (parts.length === 3) {
+        const mes = parseInt(parts[1]);
+        const ano = parseInt(parts[2]);
+        if (!isNaN(mes) && !isNaN(ano)) return { mes, ano };
     }
+    return null;
 }
 
+// ==========================================
+// NAVEGAÇÃO
+// ==========================================
 function navigate(viewId) {
     document.querySelectorAll('.view').forEach(view => {
         view.classList.remove('active', 'view-flex');
@@ -79,9 +79,6 @@ function navigate(viewId) {
     const btnVoltar = document.getElementById('btn-voltar');
     if (viewId !== 'view-inicio' && viewId !== 'view-login') btnVoltar.classList.remove('hidden');
     else btnVoltar.classList.add('hidden');
-
-    // Fechar sidebar se estiver aberta
-    if (document.getElementById('sidebar').classList.contains('open')) toggleSidebar();
 }
 
 // ==========================================
@@ -99,9 +96,8 @@ function renderPessoas() {
     tbody.innerHTML = ''; selectCestaPessoa.innerHTML = '<option value="">Selecione o beneficiário</option>';
 
     db.pessoas.forEach(pessoa => {
-        const badgeClass = pessoa.status === 'Recebeu' ? 'success' : 'error';
         const tr = document.createElement('tr');
-        tr.innerHTML = `<td><strong>${pessoa.nome}</strong></td><td>${pessoa.nascimento}</td><td>${pessoa.endereco}</td><td><span class="badge ${badgeClass}">${pessoa.status}</span></td><td class="actions"><i class="fa-solid fa-pen text-blue"></i><i class="fa-solid fa-trash text-red" onclick="deletePessoa(${pessoa.id})"></i></td>`;
+        tr.innerHTML = `<td><strong>${pessoa.nome}</strong></td><td>${pessoa.nascimento}</td><td>${pessoa.endereco}</td><td class="actions"><i class="fa-solid fa-trash text-red" onclick="deletePessoa(${pessoa.id})"></i></td>`;
         tbody.appendChild(tr);
 
         const option = document.createElement('option');
@@ -129,29 +125,25 @@ function renderCestas() {
     const tbody = document.getElementById('tbody-cestas');
     tbody.innerHTML = '';
 
-    // Atualiza os marcadores de estoque disponível no topo
     renderEstoqueCestas();
 
     db.cestas.forEach(cesta => {
         const pessoa = db.pessoas.find(p => p.id === cesta.pessoaId);
+        const dataVisualizacao = cesta.dataRecebimento ? cesta.dataRecebimento : '-';
         const badgeClass = cesta.status === 'Entregue' ? 'success' : 'warning';
+
         const tr = document.createElement('tr');
-        tr.innerHTML = `<td><strong>${cesta.tipo}</strong></td><td>${cesta.qtd}</td><td>${cesta.validade}</td><td><strong>${pessoa ? pessoa.nome : 'Desconhecida'}</strong></td><td>${pessoa ? pessoa.endereco : '-'}</td><td><span class="badge ${badgeClass}">${cesta.status}</span></td><td class="actions"><i class="fa-solid fa-trash text-red" onclick="deleteCesta(${cesta.id})"></i></td>`;
+        tr.innerHTML = `<td><strong>${cesta.tipo}</strong></td><td>${cesta.qtd}</td><td>${dataVisualizacao}</td><td><strong>${pessoa ? pessoa.nome : 'Desconhecida'}</strong></td><td>${pessoa ? pessoa.endereco : '-'}</td><td><span class="badge ${badgeClass}">${cesta.status}</span></td><td class="actions"><i class="fa-solid fa-trash text-red" onclick="deleteCesta(${cesta.id})"></i></td>`;
         tbody.appendChild(tr);
     });
 }
 
 function deleteCesta(id) {
-    if (confirm("Se esta cesta foi excluída, sua quantidade será devolvida ao estoque. Confirmar?")) {
+    if (confirm("Se esta cesta foi excluída, sua quantidade será devolvida ao estoque e sumirá do Controle. Confirmar?")) {
         const cesta = db.cestas.find(c => c.id === id);
         if (cesta) {
-            // Devolve a quantidade para o estoque de cestas prontas
             db.estoqueCestas[cesta.tipo] += parseInt(cesta.qtd);
             db.cestas = db.cestas.filter(c => c.id !== id);
-
-            // Remove do controle de recebimentos se estiver vinculada
-            db.recebimentos = db.recebimentos.filter(r => r.cestaId !== id);
-
             renderCestas();
             renderRecebimentos();
         }
@@ -223,24 +215,22 @@ function montarCestas() {
     if (qtdDesejada <= 0) return alert("Informe uma quantidade válida.");
     if (capacidadeMaxima === 0 || qtdDesejada > capacidadeMaxima) return alert(`Estoque insuficiente! Você pode montar no máximo ${capacidadeMaxima} cesta(s).`);
 
-    // Deduz do mini estoque de alimentos
     db.itensMontagem.forEach(item => {
         if (item.checked) item.estoqueDisponivel -= (item.quantidadePorCesta * qtdDesejada);
     });
 
-    // Identifica o tipo selecionado e injeta nas cestas prontas (pool)
     const tipoSelecionado = document.querySelector('input[name="tipo-cesta-montagem"]:checked').value;
     db.estoqueCestas[tipoSelecionado] += qtdDesejada;
 
     alert(`Sucesso! ${qtdDesejada} ${tipoSelecionado}(s) produzida(s) e adicionada(s) à Gestão de Cestas.`);
 
     renderMontagemCesta();
-    renderCestas(); // Atualiza contador na Gestão
+    renderCestas();
     document.getElementById('qtd-montar-input').value = 1;
 }
 
 // ==========================================
-// TELA: CONTROLE DE RECEBIMENTOS
+// TELA: CONTROLE DE RECEBIMENTOS AUTOMATIZADO
 // ==========================================
 function renderRecebimentos() {
     const tbody = document.getElementById('tbody-recebimentos');
@@ -249,24 +239,25 @@ function renderRecebimentos() {
 
     tbody.innerHTML = '';
 
-    // Filtrar pessoas pela pesquisa
     const pessoasFiltradas = db.pessoas.filter(p => p.nome.toLowerCase().includes(termoBusca));
 
     pessoasFiltradas.forEach(pessoa => {
         const tr = document.createElement('tr');
-
         let rowHtml = `<td><strong>${pessoa.nome}</strong></td>`;
 
-        // Gerar as 12 colunas de meses
         for (let mes = 1; mes <= 12; mes++) {
-            const recebimento = db.recebimentos.find(r => r.pessoaId === pessoa.id && r.ano === anoSelecionado && r.mes === mes);
+            // Verifica na base de Gestão de Cestas se há entrega para esta pessoa, neste mês e ano
+            const recebeu = db.cestas.some(c => {
+                if (c.pessoaId !== pessoa.id) return false;
+                const dataParsed = parseDataRecebimento(c.dataRecebimento);
+                return dataParsed && dataParsed.ano === anoSelecionado && dataParsed.mes === mes;
+            });
 
             let conteudo = '—';
-            if (recebimento && recebimento.recebido) {
+            if (recebeu) {
                 conteudo = '<i class="fa-solid fa-check text-green"></i>';
             }
-
-            rowHtml += `<td class="recebimento-cell" onclick="toggleRecebimento(${pessoa.id}, ${mes})">${conteudo}</td>`;
+            rowHtml += `<td>${conteudo}</td>`;
         }
 
         tr.innerHTML = rowHtml;
@@ -274,90 +265,43 @@ function renderRecebimentos() {
     });
 }
 
-function toggleRecebimento(pessoaId, mes) {
-    const anoSelecionado = parseInt(document.getElementById('recebimentos-ano').value);
-    const registroExistente = db.recebimentos.find(r => r.pessoaId === pessoaId && r.ano === anoSelecionado && r.mes === mes);
-
-    if (registroExistente && registroExistente.recebido) {
-        // DESFAZER: Remove recebimento, exclui a cesta associada (se existir) e devolve pro estoque
-        if (registroExistente.cestaId) {
-            const cestaRelacionada = db.cestas.find(c => c.id === registroExistente.cestaId);
-            if (cestaRelacionada) {
-                db.estoqueCestas[cestaRelacionada.tipo] += 1;
-                db.cestas = db.cestas.filter(c => c.id !== registroExistente.cestaId);
-            }
-        }
-        db.recebimentos = db.recebimentos.filter(r => r.id !== registroExistente.id);
-    } else {
-        // MARCAR: Consome 1 cesta do estoque (Prioriza Básica, senao Pequena)
-        let tipoDisponivel = null;
-        if (db.estoqueCestas["Cesta Básica"] >= 1) {
-            tipoDisponivel = "Cesta Básica";
-        } else if (db.estoqueCestas["Cesta Pequena"] >= 1) {
-            tipoDisponivel = "Cesta Pequena";
-        }
-
-        if (!tipoDisponivel) {
-            alert("Nenhuma cesta disponível na Gestão! Produza cestas primeiro na tela de Montagem.");
-            return;
-        }
-
-        // Deduz do estoque
-        db.estoqueCestas[tipoDisponivel] -= 1;
-
-        // Cria o registro da cesta na Gestão de Cestas (para rastreio)
-        const novaCestaId = Date.now();
-        db.cestas.push({
-            id: novaCestaId,
-            tipo: tipoDisponivel,
-            qtd: 1,
-            validade: "N/A (Entrega Rápida)",
-            pessoaId: pessoaId,
-            status: "Entregue"
-        });
-
-        // Cria o registro de recebimento
-        db.recebimentos.push({
-            id: Date.now() + 1,
-            pessoaId: pessoaId,
-            cestaId: novaCestaId,
-            ano: anoSelecionado,
-            mes: mes,
-            recebido: true
-        });
-    }
-
-    // Re-renderiza as telas envolvidas
-    renderRecebimentos();
-    renderCestas();
-}
-
+// Utiliza SheetJS para gerar um XLSX real e bem formatado
 function exportarExcel() {
     const anoSelecionado = parseInt(document.getElementById('recebimentos-ano').value);
     const termoBusca = document.getElementById('recebimentos-busca').value.toLowerCase();
 
-    // Header do CSV
-    let csvContent = "data:text/csv;charset=utf-8,";
-    csvContent += "Beneficiario,Janeiro,Fevereiro,Marco,Abril,Maio,Junho,Julho,Agosto,Setembro,Outubro,Novembro,Dezembro\n";
-
     const pessoasFiltradas = db.pessoas.filter(p => p.nome.toLowerCase().includes(termoBusca));
+    const dadosExcel = [];
 
     pessoasFiltradas.forEach(pessoa => {
-        let linha = `${pessoa.nome}`;
+        const linha = { "Beneficiário": pessoa.nome };
+
+        const mesesNomes = ["Janeiro", "Fevereiro", "Março", "Abril", "Maio", "Junho", "Julho", "Agosto", "Setembro", "Outubro", "Novembro", "Dezembro"];
+
         for (let mes = 1; mes <= 12; mes++) {
-            const recebeu = db.recebimentos.some(r => r.pessoaId === pessoa.id && r.ano === anoSelecionado && r.mes === mes && r.recebido);
-            linha += `,${recebeu ? "Recebeu" : "Nao recebeu"}`;
+            const recebeu = db.cestas.some(c => {
+                if (c.pessoaId !== pessoa.id) return false;
+                const dataParsed = parseDataRecebimento(c.dataRecebimento);
+                return dataParsed && dataParsed.ano === anoSelecionado && dataParsed.mes === mes;
+            });
+
+            linha[mesesNomes[mes - 1]] = recebeu ? "Recebeu" : "Não recebeu";
         }
-        csvContent += linha + "\n";
+
+        dadosExcel.push(linha);
     });
 
-    const encodedUri = encodeURI(csvContent);
-    const link = document.createElement("a");
-    link.setAttribute("href", encodedUri);
-    link.setAttribute("download", `Controle_Recebimentos_${anoSelecionado}.csv`);
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
+    // Cria Worksheet e Workbook e aplica as regras estruturais de colunas (SheetJS)
+    const ws = XLSX.utils.json_to_sheet(dadosExcel);
+    const wb = XLSX.utils.book_new();
+
+    // Ajusta o tamanho da primeira coluna
+    ws['!cols'] = [{ wch: 30 }];
+
+    XLSX.utils.book_append_sheet(wb, ws, `Recebimentos_${anoSelecionado}`);
+
+    // Dispara o download do arquivo .xlsx verdadeiro
+    XLSX.writeFile(wb, `Controle_de_Recebimentos_${anoSelecionado}.xlsx`);
 }
 
 // ==========================================
@@ -391,41 +335,46 @@ document.addEventListener('DOMContentLoaded', () => {
         document.getElementById('form-login').reset();
     });
 
-    // Submissão Pessoas
     document.getElementById('form-pessoa').addEventListener('submit', (e) => {
         e.preventDefault();
-        db.pessoas.push({ id: Date.now(), nome: document.getElementById('pessoa-nome').value, nascimento: document.getElementById('pessoa-nascimento').value, endereco: document.getElementById('pessoa-endereco').value, status: "Não recebeu" });
+        db.pessoas.push({ id: Date.now(), nome: document.getElementById('pessoa-nome').value, nascimento: document.getElementById('pessoa-nascimento').value, endereco: document.getElementById('pessoa-endereco').value });
         renderPessoas(); renderRecebimentos(); e.target.reset(); alert("Cadastrado com sucesso!");
     });
 
-    // Submissão Gestão de Cestas (Validação de Estoque)
+    // Submissão Gestão de Cestas - Controlando Status pela Data de Recebimento
     document.getElementById('form-cesta').addEventListener('submit', (e) => {
         e.preventDefault();
         const tipo = document.getElementById('cesta-tipo').value;
         const qtd = parseInt(document.getElementById('cesta-qtd').value);
+        const validade = document.getElementById('cesta-validade').value;
+        const dataRecebimento = document.getElementById('cesta-recebimento').value.trim();
+        const pessoaId = parseInt(document.getElementById('cesta-pessoa').value);
 
         if (qtd <= 0 || isNaN(qtd)) return alert("Quantidade inválida.");
 
-        // Valida contra o estoque disponível de Cestas Montadas
         if (qtd > db.estoqueCestas[tipo]) {
             return alert(`Quantidade indisponível. Você possui apenas ${db.estoqueCestas[tipo]} ${tipo}(s) disponível(is).`);
         }
 
-        // Deduz do estoque
         db.estoqueCestas[tipo] -= qtd;
+
+        // Regra do Status via Data de Recebimento
+        const statusReal = dataRecebimento ? "Entregue" : "Pendente";
 
         db.cestas.push({
             id: Date.now(),
             tipo: tipo,
             qtd: qtd,
-            validade: document.getElementById('cesta-validade').value,
-            pessoaId: parseInt(document.getElementById('cesta-pessoa').value),
-            status: "Entregue"
+            validade: validade,
+            dataRecebimento: dataRecebimento,
+            pessoaId: pessoaId,
+            status: statusReal
         });
 
         renderCestas();
+        renderRecebimentos();
         e.target.reset();
         document.getElementById('cesta-endereco-auto').value = '';
-        alert("Entrega registrada e deduzida do estoque com sucesso!");
+        alert("Cesta registrada com sucesso!");
     });
 });

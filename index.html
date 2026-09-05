@@ -4,10 +4,12 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Café com Aroma de Malware</title>
+    <title>Gerenciamento de Cestas Básicas</title>
     <link rel="stylesheet" href="style.css">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Biblioteca SheetJS para geração de XLSX real -->
+    <script src="https://cdn.sheetjs.com/xlsx-latest/package/dist/xlsx.full.min.js"></script>
 </head>
 
 <body>
@@ -40,32 +42,9 @@
     <!-- ÁREA AUTENTICADA DO SISTEMA -->
     <div id="app-layout" class="hidden">
 
-        <!-- OVERLAY DO MENU LATERAL -->
-        <div id="sidebar-overlay" class="sidebar-overlay hidden" onclick="toggleSidebar()"></div>
-
-        <!-- MENU LATERAL (SIDEBAR) -->
-        <aside id="sidebar" class="sidebar hidden">
-            <div class="sidebar-header">
-                <div class="logo-circle-small">ib</div>
-                <h2>Menu</h2>
-                <i class="fa-solid fa-xmark close-icon" onclick="toggleSidebar()"></i>
-            </div>
-            <nav class="sidebar-nav">
-                <a href="#" onclick="navigate('view-inicio')"><i class="fa-solid fa-house"></i> Início</a>
-                <a href="#" onclick="navigate('view-pessoas')"><i class="fa-solid fa-user-group"></i> Pessoas
-                    Atendidas</a>
-                <a href="#" onclick="navigate('view-cestas')"><i class="fa-solid fa-box"></i> Gestão de Cestas</a>
-                <a href="#" onclick="navigate('view-montagem')"><i class="fa-solid fa-list-check"></i> Montagem da
-                    Cesta</a>
-                <a href="#" onclick="navigate('view-controle-recebimentos')"><i class="fa-solid fa-calendar-check"></i>
-                    Controle de Recebimentos</a>
-            </nav>
-        </aside>
-
         <!-- CABEÇALHO GLOBAL -->
         <header id="main-header">
             <div class="header-left">
-                <i class="fa-solid fa-bars menu-icon" onclick="toggleSidebar()"></i>
                 <div class="logo-container">
                     <div class="logo-circle-small">ib</div>
                     <div class="brand">
@@ -153,7 +132,6 @@
                                     <th>Nome Completo</th>
                                     <th>Nascimento</th>
                                     <th>Endereço Residencial</th>
-                                    <th>Status da Cesta</th>
                                     <th class="col-actions">Ações</th>
                                 </tr>
                             </thead>
@@ -187,13 +165,15 @@
                         <div class="form-row">
                             <div class="form-group flex-1"><label>Quantidade</label><input type="number" id="cesta-qtd"
                                     placeholder="Ex: 1" min="1" required></div>
-                            <div class="form-group flex-3"><label>Cesta escolhida</label><select id="cesta-tipo"
+                            <div class="form-group flex-2"><label>Cesta escolhida</label><select id="cesta-tipo"
                                     required>
                                     <option value="Cesta Básica">Cesta Básica</option>
                                     <option value="Cesta Pequena">Cesta Pequena</option>
                                 </select></div>
                             <div class="form-group flex-2"><label>Data de Validade</label><input type="text"
-                                    id="cesta-validade" placeholder="Ex: 24/11/2026" required></div>
+                                    id="cesta-validade" placeholder="Ex: 30/12/2026"></div>
+                            <div class="form-group flex-2"><label>Data de Recebimento</label><input type="text"
+                                    id="cesta-recebimento" placeholder="Ex: 15/03/2026"></div>
                         </div>
                         <div class="form-row">
                             <div class="form-group flex-2"><label>Pessoa que receberá</label><select id="cesta-pessoa"
@@ -214,7 +194,7 @@
                                 <tr>
                                     <th>Alimento / Cesta</th>
                                     <th>Qtd.</th>
-                                    <th>Validade</th>
+                                    <th>Entrega</th>
                                     <th>Pessoa</th>
                                     <th>Endereço</th>
                                     <th>Status</th>
@@ -281,6 +261,7 @@
                             <select id="recebimentos-ano" onchange="renderRecebimentos()">
                                 <option value="2026">2026</option>
                                 <option value="2025">2025</option>
+                                <option value="2024">2024</option>
                             </select>
                         </div>
                         <div class="form-group flex-3">
@@ -292,9 +273,9 @@
 
                     <div class="table-responsive">
                         <p class="subtitle-text" style="margin-bottom: 15px;">
-                            <i class="fa-solid fa-circle-info text-blue"></i> Clique no mês correspondente para
-                            marcar/desmarcar o recebimento. Cada marcação consome <strong>1 Cesta</strong> do estoque
-                            disponível.
+                            <i class="fa-solid fa-circle-info text-blue"></i> O histórico abaixo é preenchido
+                            automaticamente com base na <strong>Data de Recebimento</strong> registrada na tela "Gestão
+                            de Cestas".
                         </p>
                         <table class="table-recebimentos">
                             <thead>
