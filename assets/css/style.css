@@ -65,18 +65,12 @@ body {
     text-align: center;
 }
 
-.logo-circle-large {
-    background: var(--logo-grad);
-    width: 56px;
-    height: 56px;
-    border-radius: 50%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    color: white;
-    font-weight: 700;
-    font-size: 28px;
+.logo-img-large {
+    width: 72px;
+    height: 72px;
+    object-fit: contain;
     margin: 0 auto 16px auto;
+    display: block;
 }
 
 .login-subtitle {
@@ -122,17 +116,10 @@ header {
     gap: 12px;
 }
 
-.logo-circle-small {
-    background: var(--logo-grad);
-    width: 40px;
-    height: 40px;
-    border-radius: 50%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    color: white;
-    font-weight: 700;
-    font-size: 20px;
+.logo-img-small {
+    width: 44px;
+    height: 44px;
+    object-fit: contain;
 }
 
 .brand h1 {

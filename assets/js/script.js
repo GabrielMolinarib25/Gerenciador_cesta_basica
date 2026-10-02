@@ -1,17 +1,18 @@
 /**
  * SCRIPT PRINCIPAL - INTEGRAÇÃO COM SUPABASE
  */
-const db = {
-    usuarioAutenticado: {
-        id: 1, nome: "Priscila", cargo: "Secretária", email: "maria.souza@igrejaesperanca.org"
-    }
-};
+// Estado de Autenticação
+let usuarioAutenticado = null;
 
 // Estados Locais (Cache)
 let pessoas = [];
 let estoqueCestas = { "Cesta Básica": 0, "Cesta Pequena": 0 };
 let cestas = [];
 let itensMontagem = [];
+let usuariosSistema = [];
+
+// Cliente secundário para criar usuários sem deslogar o Admin (Workaround Seguro Front-end)
+const supabaseCreateUser = supabaseLib.createClient(SUPABASE_URL, SUPABASE_ANON_KEY, { auth: { persistSession: false, autoRefreshToken: false } });
 
 // ==========================================
 // FUNÇÕES UTILITÁRIAS DE DATA
@@ -53,6 +54,12 @@ function parseDataRecebimentoIso(dataStr) {
 // INTEGRAÇÃO ASSÍNCRONA (FETCH INICIAL)
 // ==========================================
 async function fetchDadosIniciais() {
+    // 0. Usuários do Sistema (Apenas Admin acessa os demais)
+    if (usuarioAutenticado.role === 'Admin') {
+        const { data: resUsuarios } = await supabase.from('perfis').select('*').order('nome');
+        if (resUsuarios) usuariosSistema = resUsuarios;
+    }
+
     // 1. Pessoas
     let res = await supabase.from('pessoas').select('*').order('nome');
     if (res.error) throw res.error;
@@ -82,6 +89,12 @@ async function fetchDadosIniciais() {
 // NAVEGAÇÃO
 // ==========================================
 function navigate(viewId) {
+    // Validação de segurança no front-end para acesso a página de usuários
+    if (viewId === 'view-usuarios' && usuarioAutenticado?.role !== 'Admin') {
+        alert("Acesso negado. Apenas administradores podem acessar esta página.");
+        return;
+    }
+
     document.querySelectorAll('.view').forEach(view => {
         view.classList.remove('active', 'view-flex');
         view.classList.add('hidden');
@@ -103,9 +116,123 @@ function navigate(viewId) {
 // RENDERIZAÇÃO BÁSICA E PESSOAS
 // ==========================================
 function renderUserData() {
-    document.getElementById('user-name-display').innerText = db.usuarioAutenticado.nome;
-    document.getElementById('user-role-display').innerText = db.usuarioAutenticado.cargo;
-    document.getElementById('welcome-message').innerText = `Bem-vinda, ${db.usuarioAutenticado.nome}!`;
+    if (!usuarioAutenticado) return;
+    document.getElementById('user-name-display').innerText = usuarioAutenticado.nome;
+    document.getElementById('user-role-display').innerText = usuarioAutenticado.cargo;
+    document.getElementById('welcome-message').innerText = `Bem-vindo(a), ${usuarioAutenticado.nome}!`;
+
+    const cardAdmin = document.getElementById('card-admin-usuarios');
+    if (cardAdmin) {
+        cardAdmin.style.display = usuarioAutenticado.role === 'Admin' ? 'block' : 'none';
+    }
+}
+
+// Função para renderizar a tabela de usuários
+function renderUsuarios() {
+    const tbody = document.getElementById('tbody-usuarios');
+    if (!tbody) return;
+    tbody.innerHTML = '';
+
+    usuariosSistema.forEach(u => {
+        const tr = document.createElement('tr');
+        const badgeClass = u.role === 'Admin' ? 'success' : 'warning';
+        
+        let actions = '';
+        if (u.id !== usuarioAutenticado.id) {
+            actions = `<i class="fa-solid fa-trash text-red" style="cursor: pointer;" onclick="deleteUsuario('${u.id}')" title="Remover Acesso"></i>`;
+        } else {
+            actions = `<span class="text-muted" style="font-size: 12px;">(Você)</span>`;
+        }
+
+        tr.innerHTML = `
+            <td><strong>${u.nome}</strong></td>
+            <td>${u.email}</td>
+            <td><span class="badge ${badgeClass}">${u.role}</span></td>
+            <td class="actions">${actions}</td>
+        `;
+        tbody.appendChild(tr);
+    });
+}
+
+// Função para excluir acesso de um usuário (deleta o perfil)
+async function deleteUsuario(id) {
+    if (usuarioAutenticado.role !== 'Admin') return;
+    if (confirm("Tem certeza que deseja remover este acesso? O usuário não poderá mais entrar no sistema.")) {
+        try {
+            const { error } = await supabase.from('perfis').delete().eq('id', id);
+            if (error) throw error;
+
+            usuariosSistema = usuariosSistema.filter(u => u.id !== id);
+            renderUsuarios();
+            alert("Acesso do usuário removido com sucesso.");
+        } catch (err) {
+            console.error(err);
+            alert("Erro ao remover usuário: " + err.message);
+        }
+    }
+}
+
+// Função para inicializar o App após o login
+async function iniciarApp() {
+    try {
+        // Carrega o perfil do banco para saber a permissão (Admin ou Gerente)
+        let { data: perfil, error: perfilError } = await supabase.from('perfis').select('*').eq('id', usuarioAutenticado.id).single();
+        
+        // Se houve um erro que NÃO seja "Nenhuma linha retornada" (PGRST116)
+        if (perfilError && perfilError.code !== 'PGRST116') {
+            throw new Error("Erro na tabela de perfis: " + perfilError.message + ". Você rodou o script SQL?");
+        }
+
+        // Auto-criação do primeiro admin se a tabela estiver vazia
+        if (!perfil) {
+            const { count, error: countError } = await supabase.from('perfis').select('*', { count: 'exact', head: true });
+            
+            if (countError) {
+                throw new Error("Erro ao verificar tabela perfis: " + countError.message);
+            }
+
+            if (count === 0) {
+                // É o primeiro acesso do sistema: Criar como Admin
+                const novoAdmin = {
+                    id: usuarioAutenticado.id,
+                    nome: usuarioAutenticado.nome || 'Administrador',
+                    email: usuarioAutenticado.email,
+                    role: 'Admin'
+                };
+                const { error: insertError } = await supabase.from('perfis').insert([novoAdmin]);
+                if (insertError) throw new Error("Erro ao criar o seu perfil de Admin: " + insertError.message);
+                
+                perfil = novoAdmin;
+            } else {
+                // Tem outros usuários, mas esse novo não tem perfil associado (Bloqueio)
+                alert("Seu acesso foi revogado ou seu perfil não está cadastrado no sistema.");
+                await supabase.auth.signOut();
+                return;
+            }
+        }
+
+        usuarioAutenticado.role = perfil.role;
+        usuarioAutenticado.cargo = perfil.role === 'Admin' ? 'Administrador' : 'Gerente';
+        usuarioAutenticado.nome = perfil.nome;
+
+        await fetchDadosIniciais();
+
+        document.getElementById('view-login').classList.remove('active', 'view-flex');
+        document.getElementById('view-login').classList.add('hidden');
+        document.getElementById('app-layout').classList.remove('hidden');
+
+        renderUserData();
+        renderPessoas();
+        renderCestas();
+        renderMontagemCesta();
+        renderRecebimentos();
+        renderUsuarios();
+
+        navigate('view-inicio');
+    } catch (err) {
+        console.error(err);
+        alert("Não foi possível carregar os dados.\nDetalhe: " + (err.message || err));
+    }
 }
 
 function renderPessoas() {
@@ -379,42 +506,115 @@ document.getElementById('cesta-pessoa').addEventListener('change', function (e) 
     document.getElementById('cesta-endereco-auto').value = pessoa ? pessoa.endereco : '';
 });
 
-document.addEventListener('DOMContentLoaded', () => {
-    document.getElementById('form-login').addEventListener('submit', async (e) => {
+document.addEventListener('DOMContentLoaded', async () => {
+    // Verificar se já existe uma sessão ativa ao carregar a página
+    const { data: { session } } = await supabase.auth.getSession();
+    if (session) {
+        usuarioAutenticado = {
+            id: session.user.id,
+            nome: session.user.user_metadata?.full_name || session.user.email.split('@')[0],
+            cargo: session.user.user_metadata?.cargo || "Secretária",
+            email: session.user.email
+        };
+        await iniciarApp();
+    }
+
+    // Listener para mudanças na autenticação
+    supabase.auth.onAuthStateChange((event, session) => {
+        if (event === 'SIGNED_OUT') {
+            usuarioAutenticado = null;
+            document.getElementById('app-layout').classList.add('hidden');
+            navigate('view-login');
+            document.getElementById('form-login').reset();
+        }
+    });
+
+    document.getElementById('form-usuario')?.addEventListener('submit', async (e) => {
         e.preventDefault();
+        if (usuarioAutenticado.role !== 'Admin') return;
 
         const btn = e.target.querySelector('button');
-        btn.innerText = "Entrando...";
+        const txtOriginal = btn.innerText;
+        btn.innerText = "Criando...";
         btn.disabled = true;
 
+        const nome = document.getElementById('novo-usuario-nome').value;
+        const email = document.getElementById('novo-usuario-email').value;
+        const senha = document.getElementById('novo-usuario-senha').value;
+        const role = document.getElementById('novo-usuario-role').value;
+
         try {
-            // Busca todos os dados do Supabase
-            await fetchDadosIniciais();
+            // Cria no Auth usando o cliente secundário (Para não deslogar o admin atual)
+            const { data: authData, error: authError } = await supabaseCreateUser.auth.signUp({
+                email,
+                password: senha,
+                options: { data: { full_name: nome, cargo: role } }
+            });
 
-            document.getElementById('view-login').classList.remove('active', 'view-flex');
-            document.getElementById('view-login').classList.add('hidden');
-            document.getElementById('app-layout').classList.remove('hidden');
+            if (authError) throw authError;
 
-            renderUserData();
-            renderPessoas();
-            renderCestas();
-            renderMontagemCesta();
-            renderRecebimentos();
+            const novoUserId = authData.user?.id;
+            if (!novoUserId) throw new Error("Não foi possível obter o ID do novo usuário.");
 
-            navigate('view-inicio');
+            // Salva o perfil na tabela para o RBAC
+            const novoPerfil = { id: novoUserId, nome, email, role };
+            const { error: perfilError } = await supabase.from('perfis').insert([novoPerfil]);
+
+            if (perfilError) throw perfilError;
+
+            usuariosSistema.push(novoPerfil);
+            renderUsuarios();
+            e.target.reset();
+            alert("Usuário cadastrado com sucesso!");
         } catch (err) {
             console.error(err);
-            alert("Não foi possível conectar ao banco de dados.\nDetalhe: " + (err.message || err));
+            alert("Erro ao criar usuário: " + (err.message || err));
         } finally {
-            btn.innerText = "Entrar no Sistema";
+            btn.innerText = txtOriginal;
             btn.disabled = false;
         }
     });
 
-    document.getElementById('btn-logout').addEventListener('click', () => {
-        document.getElementById('app-layout').classList.add('hidden');
-        navigate('view-login');
-        document.getElementById('form-login').reset();
+    document.getElementById('form-login').addEventListener('submit', async (e) => {
+        e.preventDefault();
+
+        const btn = e.target.querySelector('button');
+        const txtOriginal = btn.innerText;
+        btn.innerText = "Entrando...";
+        btn.disabled = true;
+
+        const email = document.getElementById('login-email').value;
+        const password = document.getElementById('login-senha').value;
+
+        try {
+            // Fazer login com o Supabase Auth
+            const { data, error } = await supabase.auth.signInWithPassword({
+                email: email,
+                password: password
+            });
+
+            if (error) throw error;
+
+            usuarioAutenticado = {
+                id: data.user.id,
+                nome: data.user.user_metadata?.full_name || data.user.email.split('@')[0],
+                cargo: data.user.user_metadata?.cargo || "Secretária",
+                email: data.user.email
+            };
+
+            await iniciarApp();
+        } catch (err) {
+            console.error(err);
+            alert("Falha ao entrar: " + (err.message || "Verifique suas credenciais."));
+        } finally {
+            btn.innerText = txtOriginal;
+            btn.disabled = false;
+        }
+    });
+
+    document.getElementById('btn-logout').addEventListener('click', async () => {
+        // Deslogar no Supabase
+        await supabase.auth.signOut();
     });
 
     document.getElementById('form-pessoa').addEventListener('submit', async (e) => {

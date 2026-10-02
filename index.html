@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Gerenciamento de Cestas Básicas</title>
+    <title>Controle de Cestas Básicas</title>
     <link rel="stylesheet" href="assets/css/style.css">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
@@ -20,9 +20,7 @@
     <section id="view-login" class="view view-flex active">
         <div class="login-card">
             <div class="login-header">
-                <div class="logo-circle-large">
-                    <span>ib</span>
-                </div>
+                <img src="assets/img/logo.png" alt="Logo Igreja Batista Betel" class="logo-img-large">
                 <span class="login-subtitle">Gerenciamento de Cestas Básicas</span>
                 <h2 class="login-title">Igreja Batista Betel</h2>
             </div>
@@ -48,7 +46,7 @@
         <header id="main-header">
             <div class="header-left">
                 <div class="logo-container">
-                    <div class="logo-circle-small">ib</div>
+                    <img src="assets/img/logo.png" alt="Logo" class="logo-img-small">
                     <div class="brand">
                         <h1>Igreja Batista Betel</h1>
                         <span>SOCIAL</span>
@@ -103,6 +101,51 @@
                         <p>Permita consultar e registrar quais famílias receberam suas cestas em cada mês do ano.</p>
                         <button class="btn btn-primary" onclick="navigate('view-controle-recebimentos')">Acessar
                             Controle &rarr;</button>
+                    </div>
+                    
+                    <div class="dash-card" id="card-admin-usuarios" style="display: none;">
+                        <div class="card-icon"><i class="fa-solid fa-users-gear"></i></div>
+                        <h3>Gerenciar Usuários</h3>
+                        <p>Adicione, remova e gerencie os acessos de Administradores e Gerentes do sistema.</p>
+                        <button class="btn btn-primary" onclick="navigate('view-usuarios')">Gerenciar &rarr;</button>
+                    </div>
+                </div>
+            </section>
+
+            <!-- TELA: USUARIOS -->
+            <section id="view-usuarios" class="view hidden">
+                <div class="page-title">
+                    <h2>Gerenciamento de Usuários</h2>
+                </div>
+                <div class="content-card">
+                    <h3>Cadastrar Novo Usuário</h3>
+                    <form id="form-usuario" class="form-row">
+                        <div class="form-group flex-2"><label>Nome</label><input type="text" id="novo-usuario-nome" placeholder="Ex: João Silva" required></div>
+                        <div class="form-group flex-2"><label>E-mail</label><input type="email" id="novo-usuario-email" placeholder="joao@igreja.org" required></div>
+                        <div class="form-group flex-2"><label>Senha Temporária</label><input type="password" id="novo-usuario-senha" placeholder="min. 6 caracteres" minlength="6" required></div>
+                        <div class="form-group flex-1"><label>Função</label>
+                            <select id="novo-usuario-role" required>
+                                <option value="Gerente">Gerente</option>
+                                <option value="Admin">Administrador</option>
+                            </select>
+                        </div>
+                        <div class="form-actions-inline"><button type="submit" class="btn btn-primary">Cadastrar</button></div>
+                    </form>
+                </div>
+                <div class="content-card">
+                    <h3>Usuários do Sistema</h3>
+                    <div class="table-responsive">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Nome</th>
+                                    <th>E-mail</th>
+                                    <th>Função</th>
+                                    <th class="col-actions">Ações</th>
+                                </tr>
+                            </thead>
+                            <tbody id="tbody-usuarios"></tbody>
+                        </table>
                     </div>
                 </div>
             </section>
@@ -306,8 +349,8 @@
             </section>
 
         </main>
-    <script src="assets/js/supabaseClient.js"></script>
-    <script src="assets/js/script.js"></script>
+        <script src="assets/js/supabaseClient.js"></script>
+        <script src="assets/js/script.js"></script>
 </body>
 
 </html>
